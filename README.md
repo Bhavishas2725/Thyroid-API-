@@ -139,4 +139,3 @@ curl -X POST "http://localhost:8000/predict_risk" \
 This API is a **screening tool only** and is not intended for clinical diagnosis. Always consult a qualified medical professional.
 
 ---
-Built by Bhavisha S
