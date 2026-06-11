@@ -1,0 +1,459 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset="UTF-8">
+  <title>Thyroid Cancer Prediction</title>
+  <link href='https://fonts.googleapis.com/css?family=Pacifico' rel='stylesheet' type='text/css'>
+  <link href='https://fonts.googleapis.com/css?family=Arimo' rel='stylesheet' type='text/css'>
+  <link href='https://fonts.googleapis.com/css?family=Hind:300' rel='stylesheet' type='text/css'>
+  <link href='https://fonts.googleapis.com/css?family=Open+Sans+Condensed:300' rel='stylesheet' type='text/css'>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+  <script>
+    function showPrediction() {
+      const predictionText = "{{ prediction_text }}";
+      if (predictionText) {
+        Swal.fire({
+          title: 'Prediction Result',
+          text: predictionText,
+          icon: 'info',
+          confirmButtonText: 'OK'
+        });
+      }
+    }
+
+    function switchPredictionType(type) {
+      const riskForm = document.getElementById('riskForm');
+      const recurrenceForm = document.getElementById('recurrenceForm');
+
+      if (type === 'risk') {
+        riskForm.style.display = 'flex';
+        recurrenceForm.style.display = 'none';
+        document.getElementById('riskTab').checked = true;
+      } else {
+        riskForm.style.display = 'none';
+        recurrenceForm.style.display = 'flex';
+        document.getElementById('recurrenceTab').checked = true;
+      }
+    }
+
+    function toggleChatbot() {
+      const chatContainer = document.getElementById('chatbotContainer');
+      if (chatContainer.style.display === 'flex') {
+        chatContainer.style.display = 'none';
+      } else {
+        chatContainer.style.display = 'flex';
+        if (document.getElementById('chatbotMessages').children.length === 0) {
+          appendMessage('bot', "Hi! I'm your Thyroid Assistant. How can I help you today?");
+        }
+      }
+    }
+
+    function sendMessage() {
+      const input = document.getElementById('chatbotInput');
+      const message = input.value.trim();
+      if (!message) return;
+
+      appendMessage('user', message);
+      input.value = '';
+
+      fetch('/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message: message })
+      })
+        .then(response => response.json())
+        .then(data => {
+          appendMessage('bot', data.response);
+        })
+        .catch(error => {
+          console.error('Error:', error);
+          appendMessage('bot', 'Sorry, I encountered an error. Please try again.');
+        });
+    }
+
+    function appendMessage(sender, text) {
+      const messagesDiv = document.getElementById('chatbotMessages');
+      const messageDiv = document.createElement('div');
+      messageDiv.className = `message ${sender}-message`;
+      messageDiv.textContent = text;
+      messagesDiv.appendChild(messageDiv);
+      messagesDiv.scrollTop = messagesDiv.scrollHeight;
+    }
+
+    function handleChatKeyPress(event) {
+      if (event.key === 'Enter') {
+        sendMessage();
+      }
+    }
+  </script>
+</head>
+
+<body onload="showPrediction()">
+  <!-- Full Chatbot Interface -->
+  <div class="chatbot-button" onclick="toggleChatbot()">
+    <i class="fas fa-comments"></i>
+  </div>
+
+  <div id="chatbotContainer" class="chatbot-container">
+    <div class="chatbot-header">
+      <h3>Thyroid Assistant</h3>
+      <span class="close-chat" onclick="toggleChatbot()">&times;</span>
+    </div>
+    <div id="chatbotMessages" class="chatbot-messages">
+      <!-- Messages will appear here -->
+    </div>
+    <div class="chatbot-input">
+      <input type="text" id="chatbotInput" placeholder="Ask me something..." onkeypress="handleChatKeyPress(event)">
+      <button onclick="sendMessage()">Send</button>
+    </div>
+  </div>
+
+  <div class="login">
+    <h1 style="text-align:center; font-size:2rem; margin-bottom:10px;">
+      Thyroid Cancer Prediction System
+    </h1>
+    <h1 style="text-align:center; font-size:1.5rem; margin-bottom:30px; font-weight:300;">
+      Patient Risk Assessment
+    </h1>
+
+    <!-- Prediction Type Selection -->
+    <div class="prediction-type-selector">
+      <label class="radio-option">
+        <input type="radio" id="recurrenceTab" name="prediction_type" value="recurrence"
+          onchange="switchPredictionType('recurrence')" checked>
+        <span>Recurrence Prediction</span>
+      </label>
+      <label class="radio-option">
+        <input type="radio" id="riskTab" name="prediction_type" value="risk" onchange="switchPredictionType('risk')">
+        <span>Risk Prediction</span>
+      </label>
+    </div>
+
+    <!-- Recurrence Prediction Form -->
+    <form id="recurrenceForm" action="{{ url_for('predict')}}" method="post">
+      <input type="hidden" name="prediction_type" value="recurrence">
+
+      <!-- Age Input -->
+      <div class="form-group">
+        <label for="age">Age:</label>
+        <input type="number" name="age" value="27" min="0" max="150" required="required">
+      </div>
+
+      <!-- Gender Dropdown -->
+      <div class="form-group">
+        <label for="gender">Gender:</label>
+        <select name="gender" required="required">
+          <option value="" disabled>Select Gender</option>
+          <option value="F" selected>F</option>
+          <option value="M">M</option>
+        </select>
+      </div>
+
+      <!-- Smoking Dropdown -->
+      <div class="form-group">
+        <label for="smoking">Smoking:</label>
+        <select name="smoking" required="required">
+          <option value="" disabled>Select Smoking Status</option>
+          <option value="No" selected>No</option>
+          <option value="Yes">Yes</option>
+        </select>
+      </div>
+
+      <!-- Hx Smoking Dropdown -->
+      <div class="form-group">
+        <label for="hx_smoking">Hx Smoking:</label>
+        <select name="hx_smoking" required="required">
+          <option value="" disabled>Select Smoking History</option>
+          <option value="No" selected>No</option>
+          <option value="Yes">Yes</option>
+        </select>
+      </div>
+
+      <!-- Hx Radiotherapy Dropdown -->
+      <div class="form-group">
+        <label for="hx_radiotherapy">Hx Radiotherapy:</label>
+        <select name="hx_radiotherapy" required="required">
+          <option value="" disabled>Select Radiotherapy History</option>
+          <option value="No" selected>No</option>
+          <option value="Yes">Yes</option>
+        </select>
+      </div>
+
+      <!-- Thyroid Function Dropdown -->
+      <div class="form-group">
+        <label for="thyroid_function">Thyroid Function:</label>
+        <select name="thyroid_function" required="required">
+          <option value="" disabled>Select Thyroid Function</option>
+          <option value="Euthyroid" selected>Euthyroid</option>
+          <option value="Clinical Hyperthyroidism">Clinical Hyperthyroidism</option>
+          <option value="Subclinical Hypothyroidism">Subclinical Hypothyroidism</option>
+          <option value="Clinical Hypothyroidism">Clinical Hypothyroidism</option>
+          <option value="Subclinical Hyperthyroidism">Subclinical Hyperthyroidism</option>
+        </select>
+      </div>
+
+      <!-- Physical Examination Dropdown -->
+      <div class="form-group">
+        <label for="physical_examination">Physical Examination:</label>
+        <select name="physical_examination" required="required">
+          <option value="" disabled>Select Physical Examination</option>
+          <option value="Multinodular goiter">Multinodular goiter</option>
+          <option value="Single nodular goiter-right">Single nodular goiter-right</option>
+          <option value="Single nodular goiter-left" selected>Single nodular goiter-left</option>
+          <option value="Normal">Normal</option>
+          <option value="Diffuse goiter">Diffuse goiter</option>
+        </select>
+      </div>
+
+      <!-- Adenopathy Dropdown -->
+      <div class="form-group">
+        <label for="adenopathy">Adenopathy:</label>
+        <select name="adenopathy" required="required">
+          <option value="" disabled>Select Adenopathy</option>
+          <option value="No" selected>No</option>
+          <option value="Right">Right</option>
+          <option value="Bilateral">Bilateral</option>
+          <option value="Left">Left</option>
+          <option value="Extensive">Extensive</option>
+          <option value="Posterior">Posterior</option>
+        </select>
+      </div>
+
+      <!-- Pathology Dropdown -->
+      <div class="form-group">
+        <label for="pathology">Pathology:</label>
+        <select name="pathology" required="required">
+          <option value="" disabled>Select Pathology</option>
+          <option value="Papillary">Papillary</option>
+          <option value="Micropapillary" selected>Micropapillary</option>
+          <option value="Follicular">Follicular</option>
+          <option value="Hurthel cell">Hurthel cell</option>
+        </select>
+      </div>
+
+      <!-- Focality Dropdown -->
+      <div class="form-group">
+        <label for="focality">Focality:</label>
+        <select name="focality" required="required">
+          <option value="" disabled>Select Focality</option>
+          <option value="Uni-Focal" selected>Uni-Focal</option>
+          <option value="Multi-Focal">Multi-Focal</option>
+        </select>
+      </div>
+
+      <!-- Stage Dropdown -->
+      <div class="form-group">
+        <label for="stage">Stage:</label>
+        <select name="stage" required="required">
+          <option value="" disabled>Select Stage</option>
+          <option value="I" selected>I</option>
+          <option value="II">II</option>
+          <option value="III">III</option>
+          <option value="IVA">IVA</option>
+          <option value="IVB">IVB</option>
+        </select>
+      </div>
+
+      <!-- Risk Dropdown -->
+      <div class="form-group">
+        <label for="risk">Risk:</label>
+        <select name="risk" required="required">
+          <option value="" disabled>Select Risk Level</option>
+          <option value="Low">Low</option>
+          <option value="High">High</option>
+          <option value="Intermediate">Intermediate</option>
+        </select>
+      </div>
+
+      <!-- Response Dropdown -->
+      <div class="form-group">
+        <label for="response">Response:</label>
+        <select name="response" required="required">
+          <option value="" disabled>Select Response</option>
+          <option value="Excellent">Excellent</option>
+          <option value="Biochemical Incomplete">Biochemical Incomplete</option>
+          <option value="Indeterminate">Indeterminate</option>
+          <option value="Structural Incomplete">Structural Incomplete</option>
+        </select>
+      </div>
+
+      <button type="submit" class="btn btn-primary btn-block btn-large">Predict Recurrence</button>
+    </form>
+
+    <!-- Risk Prediction Form -->
+    <form id="riskForm" action="{{ url_for('predict_risk')}}" method="post" style="display: none;">
+      <input type="hidden" name="prediction_type" value="risk">
+
+      <!-- Age Input -->
+      <div class="form-group">
+        <label for="age_risk">Age:</label>
+        <input type="number" name="age" value="27" min="0" max="150" required="required">
+      </div>
+
+      <!-- Gender Dropdown -->
+      <div class="form-group">
+        <label for="gender_risk">Gender:</label>
+        <select name="gender" required="required">
+          <option value="" disabled>Select Gender</option>
+          <option value="F" selected>F</option>
+          <option value="M">M</option>
+        </select>
+      </div>
+
+      <!-- Smoking Dropdown -->
+      <div class="form-group">
+        <label for="smoking_risk">Smoking:</label>
+        <select name="smoking" required="required">
+          <option value="" disabled>Select Smoking Status</option>
+          <option value="No" selected>No</option>
+          <option value="Yes">Yes</option>
+        </select>
+      </div>
+
+      <!-- Hx Smoking Dropdown -->
+      <div class="form-group">
+        <label for="hx_smoking_risk">Hx Smoking:</label>
+        <select name="hx_smoking" required="required">
+          <option value="" disabled>Select Smoking History</option>
+          <option value="No" selected>No</option>
+          <option value="Yes">Yes</option>
+        </select>
+      </div>
+
+      <!-- Hx Radiotherapy Dropdown -->
+      <div class="form-group">
+        <label for="hx_radiotherapy_risk">Hx Radiotherapy:</label>
+        <select name="hx_radiotherapy" required="required">
+          <option value="" disabled>Select Radiotherapy History</option>
+          <option value="No" selected>No</option>
+          <option value="Yes">Yes</option>
+        </select>
+      </div>
+
+      <!-- Thyroid Function Dropdown -->
+      <div class="form-group">
+        <label for="thyroid_function_risk">Thyroid Function:</label>
+        <select name="thyroid_function" required="required">
+          <option value="" disabled>Select Thyroid Function</option>
+          <option value="Euthyroid" selected>Euthyroid</option>
+          <option value="Clinical Hyperthyroidism">Clinical Hyperthyroidism</option>
+          <option value="Subclinical Hypothyroidism">Subclinical Hypothyroidism</option>
+          <option value="Clinical Hypothyroidism">Clinical Hypothyroidism</option>
+          <option value="Subclinical Hyperthyroidism">Subclinical Hyperthyroidism</option>
+        </select>
+      </div>
+
+      <!-- Physical Examination Dropdown -->
+      <div class="form-group">
+        <label for="physical_examination_risk">Physical Examination:</label>
+        <select name="physical_examination" required="required">
+          <option value="" disabled>Select Physical Examination</option>
+          <option value="Multinodular goiter">Multinodular goiter</option>
+          <option value="Single nodular goiter-right">Single nodular goiter-right</option>
+          <option value="Single nodular goiter-left" selected>Single nodular goiter-left</option>
+          <option value="Normal">Normal</option>
+          <option value="Diffuse goiter">Diffuse goiter</option>
+        </select>
+      </div>
+
+      <!-- Adenopathy Dropdown -->
+      <div class="form-group">
+        <label for="adenopathy_risk">Adenopathy:</label>
+        <select name="adenopathy" required="required">
+          <option value="" disabled>Select Adenopathy</option>
+          <option value="No" selected>No</option>
+          <option value="Right">Right</option>
+          <option value="Bilateral">Bilateral</option>
+          <option value="Left">Left</option>
+          <option value="Extensive">Extensive</option>
+          <option value="Posterior">Posterior</option>
+        </select>
+      </div>
+
+      <!-- Pathology Dropdown -->
+      <div class="form-group">
+        <label for="pathology_risk">Pathology:</label>
+        <select name="pathology" required="required">
+          <option value="" disabled>Select Pathology</option>
+          <option value="Papillary">Papillary</option>
+          <option value="Micropapillary" selected>Micropapillary</option>
+          <option value="Follicular">Follicular</option>
+          <option value="Hurthel cell">Hurthel cell</option>
+        </select>
+      </div>
+
+      <!-- Focality Dropdown -->
+      <div class="form-group">
+        <label for="focality_risk">Focality:</label>
+        <select name="focality" required="required">
+          <option value="" disabled>Select Focality</option>
+          <option value="Uni-Focal" selected>Uni-Focal</option>
+          <option value="Multi-Focal">Multi-Focal</option>
+        </select>
+      </div>
+
+      <!-- T Staging Dropdown -->
+      <div class="form-group">
+        <label for="t_stage_risk">T Stage:</label>
+        <select name="t_stage" required="required">
+          <option value="" disabled>Select T Stage</option>
+          <option value="T1a">T1a</option>
+          <option value="T1b">T1b</option>
+          <option value="T2">T2</option>
+          <option value="T3a">T3a</option>
+          <option value="T3b">T3b</option>
+          <option value="T4a">T4a</option>
+          <option value="T4b">T4b</option>
+        </select>
+      </div>
+
+      <!-- N Staging Dropdown -->
+      <div class="form-group">
+        <label for="n_stage_risk">N Stage:</label>
+        <select name="n_stage" required="required">
+          <option value="" disabled>Select N Stage</option>
+          <option value="N0">N0</option>
+          <option value="N1a">N1a</option>
+          <option value="N1b">N1b</option>
+        </select>
+      </div>
+
+      <!-- M Staging Dropdown -->
+      <div class="form-group">
+        <label for="m_stage_risk">M Stage:</label>
+        <select name="m_stage" required="required">
+          <option value="" disabled>Select M Stage</option>
+          <option value="M0">M0</option>
+          <option value="M1">M1</option>
+        </select>
+      </div>
+
+      <!-- Stage Dropdown -->
+      <div class="form-group">
+        <label for="stage_risk">Stage:</label>
+        <select name="stage" required="required">
+          <option value="" disabled>Select Stage</option>
+          <option value="I" selected>I</option>
+          <option value="II">II</option>
+          <option value="III">III</option>
+          <option value="IVA">IVA</option>
+          <option value="IVB">IVB</option>
+        </select>
+      </div>
+
+      <button type="submit" class="btn btn-primary btn-block btn-large">Predict Risk</button>
+    </form>
+
+    <br>
+    <br>
+
+  </div>
+  </div>
+</body>
+
+</html>
