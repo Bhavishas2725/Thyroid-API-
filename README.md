@@ -12,7 +12,7 @@
 
 ---
 
-## Demo
+## API Output
 
 ![Swagger UI](results/api2.png)
 ![Swagger UI](results/api1.png)
