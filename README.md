@@ -14,7 +14,10 @@
 
 ## Demo
 
-![Swagger UI](results/swagger_ui.png)
+![Swagger UI](results/api2.png)
+![Swagger UI](results/api1.png)
+
+## WebApp
 ![Web App — Recurrence Prediction](results/webapp1.png)
 ![Web App — Risk Prediction](results/webapp2.png)
 ![Chatbot Assistant](results/chatbot.png)
